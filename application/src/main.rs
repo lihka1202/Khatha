@@ -1,22 +1,26 @@
-use druid::widget::{Button, Flex, Label};
-use druid::{AppLauncher, LocalizedString, PlatformError, Widget, WidgetExt, WindowDesc};
+// Derive traits
+use druid::{widget::{Button, Flex, Label}, AppLauncher, Data, Env, Widget, WindowDesc};
 
-fn main() -> Result<(), PlatformError> {
-    let main_window = WindowDesc::new(ui_builder());
-    let data = 0_i32;
-    AppLauncher::with_window(main_window)
-        .log_to_console()
-        .launch(data).try_into().unwrap()
+#[derive(Clone, Data)]
+struct RandomData {
+    num : i32
 }
 
-fn ui_builder() -> impl Widget<i32> {
-    // The label text will be computed dynamically based on the current locale and count
-    let text =
-        LocalizedString::new("hello-counter").with_arg("count", |data: &i32, _env| (*data).into());
-    let label = Label::new(text).padding(5.0).center();
-    let button = Button::new("increment")
-        .on_click(|_ctx, data: &mut i32, _env| *data += 2)
-        .padding(5.0);
+fn ui_builder() -> impl Widget<RandomData> {
+    let label = Label::new(|data: &RandomData, _: &Env| format!("Counter: {}", data.num));
+    let increment = Button::new("+").on_click(|_ctx, data: &mut RandomData, _:&Env| data.num += 1);
+    let decrement = Button::new("-").on_click(|_ctx, data: &mut RandomData, _:&Env| {
+        if data.num > 0 {
+            data.num -=1
+        }
+    } );
 
-    Flex::column().with_child(label).with_child(button)
+    // return the basic structure
+    Flex::column().with_child(label).with_child(Flex::row().with_child(increment).with_child(decrement))
+}
+
+fn main () {
+    let main_window = WindowDesc::new(ui_builder());
+    AppLauncher::with_window(main_window)
+    .log_to_console().launch(RandomData{num:0}).unwrap();
 }
